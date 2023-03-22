@@ -30,7 +30,7 @@ function directoryCreater(directoryName) {
 
     return new Promise((resolve, rejects) => {
 
-        fs.mkdir(path.join(__dirname, directoryName), { overwrite: false }, (error) => {
+        fs.mkdir(path.join(__dirname, directoryName), (error) => {
 
             if (error) {
 
@@ -50,21 +50,30 @@ function directoryCreater(directoryName) {
 
 function fileCreater(fileName, directoryName) {
 
+
     return new Promise((rejects, resolve) => {
 
-        fs.writeFile(path.join(__dirname, directoryName, `${fileName}.json`), JSON.stringify({ "hello": "how are you" }), (error) => {
+        if (fs.existsSync(fileName)) {
 
-            if (error) {
+            resolve(`${fileName}.json already exists`);
 
-                rejects(error);
+        } else {
 
-            } else {
+            fs.writeFile(path.join(__dirname, directoryName, `${fileName}.json`), JSON.stringify({ "hello": "how are you" }), (error) => {
 
-                resolve(`${fileName}.json created`);
+                if (error) {
 
-            }
+                    rejects(error);
 
-        });
+                } else {
+
+                    resolve(`${fileName}.json created`);
+
+                }
+
+            });
+
+        }
 
     });
 
@@ -74,19 +83,27 @@ function fileDeleter(fileName, directoryName) {
 
     return new Promise((resolve, rejects) => {
 
-        fs.unlink(path.join(__dirname, directoryName, fileName), (error) => {
+        if (fs.existsSync(fileName)) {
 
-            if(error) {
-                
-                rejects(error);
+            fs.unlink(path.join(__dirname, directoryName, fileName), (error) => {
 
-            } else {
+                if (error) {
 
-                resolve(`${fileName} deleted`);
+                    rejects(error);
 
-            }
+                } else {
 
-        });
+                    resolve(`${fileName}.json deleted`);
+
+                }
+
+            });
+
+        } else {
+
+            resolve(`${fileName}.json doesn't exist`);
+
+        }
 
     });
 
@@ -99,7 +116,23 @@ serverApp.post('/', (request, response) => {
 
     if (fs.existsSync(directoryName)) {
 
-        response.send('Directory already exists');
+        let filesCreationMessage = files.map((file, fileIndex, files) => {
+
+            fileCreater(file, directoryName).then((data) => {
+
+                console.log(data);
+
+            }).catch((data) => {
+
+                console.error(data);
+
+            });
+
+            return `${file}.json created`
+
+        });
+
+        response.send(filesCreationMessage);
 
     } else {
 
@@ -125,7 +158,7 @@ serverApp.post('/', (request, response) => {
 
             });
 
-            return `${file}.json created`
+            return `${file}.json created`;
 
         });
 
@@ -140,24 +173,31 @@ serverApp.delete('/', (request, response) => {
     let deleteDirectory = request.body.directory;
     let deleteFiles = request.body.files;
 
-    let deleteMessage = deleteFiles.map((file, fileIndex, files) => {
+    if (fs.existsSync(deleteDirectory)) {
 
-        fileDeleter(`${file}.json`, deleteDirectory).then((data) => {
+        let deleteMessage = deleteFiles.map((file, fileIndex, files) => {
 
-            console.log(data);
+            fileDeleter(`${file}.json`, deleteDirectory).then((data) => {
 
-        }).catch((data) => {
+                console.log(data);
 
-            console.error(data);
+            }).catch((data) => {
+
+                console.error(data);
+
+            });
+
+            return `${file}.json deleted`;
 
         });
 
+        response.send(deleteMessage);
 
-        return `${file}.json deleted`;
+    } else {
 
-    });
+        response.send(`${deleteDirectory} directory doesn't exist`);
 
-    response.send(deleteMessage);
+    }
 
 });
 
