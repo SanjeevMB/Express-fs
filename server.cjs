@@ -23,11 +23,14 @@ const fs = require('fs');
 const path = require('path');
 const PORT = process.env.PORT || 8000;
 
-function directoryCreater(dirName) {
+
+serverApp.use(express.json());
+
+function directoryCreater(directoryName) {
 
     return new Promise((resolve, rejects) => {
 
-        fs.mkdir(path.join(__dirname, 'directory'), (error) => {
+        fs.mkdir(path.join(__dirname, directoryName), { overwrite: false }, (error) => {
 
             if (error) {
 
@@ -35,7 +38,7 @@ function directoryCreater(dirName) {
 
             } else {
 
-                resolve(`${dirName} created`);
+                resolve(`${directoryName} created`);
 
             }
 
@@ -45,43 +48,70 @@ function directoryCreater(dirName) {
 
 }
 
-serverApp.post('/dir', (request, response) => {
+function fileCreater(fileName, directoryName) {
 
-    console.log(request.originalUrl);
+    return new Promise((rejects, resolve) => {
 
-    response.send(request.originalUrl);
+        fs.writeFile(path.join(__dirname, directoryName, `${fileName}.json`), JSON.stringify({ "hello": "how are you" }), (error) => {
 
-    if (typeof (fileName) !== 'string') {
+            if (error) {
 
-        response.send('send a string value for fileName');
+                rejects(error);
+
+            } else {
+
+                resolve(`${fileName}.json created`);
+
+            }
+
+        });
+
+    });
+
+}
+
+serverApp.post('/', (request, response) => {
+
+    let directoryName = request.body.directory;
+    let files = request.body.files;
+
+    if (fs.existsSync(directoryName)) {
+
+        response.send('Directory already exists');
 
     } else {
 
-        let createFile = new Promise((resolve, rejects) => {
+        directoryCreater(directoryName).then((data) => {
 
-            fs.writeFile(path.join(__dirname, 'directory', `${fileName}.json`), '', (error) => {
+            console.log(data);
 
-                if (error) {
+        }).catch((data) => {
 
-                    rejects(error);
+            console.error(data);
 
-                } else {
+        });
 
-                    resolve(`${fileName}.json file created`);
+        let filesCreationMessage = files.map((file, fileIndex, files) => {
 
-                }
+            fileCreater(file, directoryName).then((data) => {
+
+                console.log(data);
+
+            }).catch((data) => {
+
+                console.error(data);
 
             });
 
-        });
-
-        createFile.then((data) => {
-
-            response.send(data);
+            return `${file}.json created`
 
         });
+
+        response.send(filesCreationMessage);
 
     }
+
+    // console.log(typeof(directoryName), typeof(files[0]));
 
 });
 
