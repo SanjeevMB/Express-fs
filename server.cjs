@@ -70,6 +70,28 @@ function fileCreater(fileName, directoryName) {
 
 }
 
+function fileDeleter(fileName, directoryName) {
+
+    return new Promise((resolve, rejects) => {
+
+        fs.unlink(path.join(__dirname, directoryName, fileName), (error) => {
+
+            if(error) {
+                
+                rejects(error);
+
+            } else {
+
+                resolve(`${fileName} deleted`);
+
+            }
+
+        });
+
+    });
+
+}
+
 serverApp.post('/', (request, response) => {
 
     let directoryName = request.body.directory;
@@ -111,7 +133,31 @@ serverApp.post('/', (request, response) => {
 
     }
 
-    // console.log(typeof(directoryName), typeof(files[0]));
+});
+
+serverApp.delete('/', (request, response) => {
+
+    let deleteDirectory = request.body.directory;
+    let deleteFiles = request.body.files;
+
+    let deleteMessage = deleteFiles.map((file, fileIndex, files) => {
+
+        fileDeleter(`${file}.json`, deleteDirectory).then((data) => {
+
+            console.log(data);
+
+        }).catch((data) => {
+
+            console.error(data);
+
+        });
+
+
+        return `${file}.json deleted`;
+
+    });
+
+    response.send(deleteMessage);
 
 });
 
