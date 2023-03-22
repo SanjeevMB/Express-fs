@@ -21,188 +21,21 @@ const express = require('express');
 const serverApp = express();
 const fs = require('fs');
 const path = require('path');
+
+const directoryCreater = require('./directoryCreater');
+const fileCreater = require('./fileCreater');
+const fileDeleter = require('./fileDeleter');
+const postRoute = require('./postRoute');
+const deleteRoute = require('./deleteRoute');
+
 const PORT = process.env.PORT || 8000;
 
-
 serverApp.use(express.json());
-
-function directoryCreater(directoryName) {
-
-    return new Promise((resolve, rejects) => {
-
-        fs.mkdir(path.join(__dirname, directoryName), (error) => {
-
-            if (error) {
-
-                rejects(error);
-
-            } else {
-
-                resolve(`${directoryName} created`);
-
-            }
-
-        });
-
-    });
-
-}
-
-function fileCreater(fileName, directoryName) {
-
-
-    return new Promise((rejects, resolve) => {
-
-        if (fs.existsSync(fileName)) {
-
-            resolve(`${fileName}.json already exists`);
-
-        } else {
-
-            fs.writeFile(path.join(__dirname, directoryName, `${fileName}.json`), JSON.stringify({ "hello": "how are you" }), (error) => {
-
-                if (error) {
-
-                    rejects(error);
-
-                } else {
-
-                    resolve(`${fileName}.json created`);
-
-                }
-
-            });
-
-        }
-
-    });
-
-}
-
-function fileDeleter(fileName, directoryName) {
-
-    return new Promise((resolve, rejects) => {
-
-        if (fs.existsSync(fileName)) {
-
-            fs.unlink(path.join(__dirname, directoryName, fileName), (error) => {
-
-                if (error) {
-
-                    rejects(error);
-
-                } else {
-
-                    resolve(`${fileName}.json deleted`);
-
-                }
-
-            });
-
-        } else {
-
-            resolve(`${fileName}.json doesn't exist`);
-
-        }
-
-    });
-
-}
-
-serverApp.post('/', (request, response) => {
-
-    let directoryName = request.body.directory;
-    let files = request.body.files;
-
-    if (fs.existsSync(directoryName)) {
-
-        let filesCreationMessage = files.map((file, fileIndex, files) => {
-
-            fileCreater(file, directoryName).then((data) => {
-
-                console.log(data);
-
-            }).catch((data) => {
-
-                console.error(data);
-
-            });
-
-            return `${file}.json created`
-
-        });
-
-        response.send(filesCreationMessage);
-
-    } else {
-
-        directoryCreater(directoryName).then((data) => {
-
-            console.log(data);
-
-        }).catch((data) => {
-
-            console.error(data);
-
-        });
-
-        let filesCreationMessage = files.map((file, fileIndex, files) => {
-
-            fileCreater(file, directoryName).then((data) => {
-
-                console.log(data);
-
-            }).catch((data) => {
-
-                console.error(data);
-
-            });
-
-            return `${file}.json created`;
-
-        });
-
-        response.send(filesCreationMessage);
-
-    }
-
-});
-
-serverApp.delete('/', (request, response) => {
-
-    let deleteDirectory = request.body.directory;
-    let deleteFiles = request.body.files;
-
-    if (fs.existsSync(deleteDirectory)) {
-
-        let deleteMessage = deleteFiles.map((file, fileIndex, files) => {
-
-            fileDeleter(`${file}.json`, deleteDirectory).then((data) => {
-
-                console.log(data);
-
-            }).catch((data) => {
-
-                console.error(data);
-
-            });
-
-            return `${file}.json deleted`;
-
-        });
-
-        response.send(deleteMessage);
-
-    } else {
-
-        response.send(`${deleteDirectory} directory doesn't exist`);
-
-    }
-
-});
 
 serverApp.listen(PORT, () => {
 
     console.log(`listening server on port ${PORT}`);
 
 });
+
+module.exports = serverApp;
